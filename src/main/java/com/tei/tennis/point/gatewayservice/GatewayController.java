@@ -6,7 +6,9 @@ import com.tei.tennis.point.gatewayservice.model.Game;
 import com.tei.tennis.point.gatewayservice.model.User;
 import com.tei.tennis.point.gatewayservice.presentation.GameResult;
 import com.tei.tennis.point.gatewayservice.presentation.ToResult;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -35,11 +37,15 @@ import java.util.Optional;
 @CrossOrigin("http://localhost:4200/")
 public class GatewayController {
 
-    public static final String AUTH_SERVICE = "http://localhost:8081/api/v1/user/";
-    public static final String TENIS_SERVICE = "http://localhost:4000/";
-    public static final String REPORTING_SERVICE = "http://localhost:3000/";
+    @Value("${auth}")
+    public String AUTH_SERVICE;
+    @Value("${tennis}")
+    public String TENNIS_SERVICE;
+    @Value("${reporting}")
+    public String REPORTING_SERVICE;
 
     @PostMapping("/login")
+    @Operation(description = "Login endpoint for existing users only.")
     public ResponseEntity<?> login(@RequestBody User user) throws JsonProcessingException {
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -52,6 +58,7 @@ public class GatewayController {
 
         HttpResponse<String> response = null;
         try {
+            log.info("GATEWAY POST login: " + request.uri());
             response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -62,7 +69,7 @@ public class GatewayController {
                 log.info(response.body());
                 Map value = objectMapper.readValue(response.body(), Map.class);
                 if (!value.containsKey("token")) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(value);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(value);
                 } else {
                     ResponseEntity.of(Optional.of(value));
                 }
@@ -77,6 +84,7 @@ public class GatewayController {
     }
 
     @PostMapping("/register")
+    @Operation(description = "Registration endpoint new users.")
     public ResponseEntity<Map> register(@RequestBody User user) throws JsonProcessingException {
         HttpRequest request = HttpRequest.newBuilder()
             .header("Content-type", "application/json")
@@ -88,6 +96,7 @@ public class GatewayController {
 
         HttpResponse<String> response = null;
         try {
+            log.info("GATEWAY POST register: " + request.uri());
             response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -95,7 +104,6 @@ public class GatewayController {
         if (response != null) {
             ObjectMapper objectMapper = new ObjectMapper();
             try {
-                log.info(response.body());
                 return ResponseEntity.of(
                     Optional.of(objectMapper.readValue(response.body(), Map.class))
                 );
@@ -107,15 +115,17 @@ public class GatewayController {
     }
 
     @PostMapping("/game/{gameId}/point/{side}")
+    @Operation(description = "Calling this endpoint will add the point to the specified side of the game, unless the game is not already over.")
     public Game addPoint(@PathVariable String gameId, @PathVariable String side, HttpServletRequest servletRequest) {
         String token = servletRequest.getHeader("Authorization");
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(TENIS_SERVICE + "game/" + gameId + "/point/" + side))
+            .uri(URI.create(TENNIS_SERVICE + "game/" + gameId + "/point/" + side))
             .POST(HttpRequest.BodyPublishers.noBody())
             .header("Authorization", token).build();
 
         HttpResponse<String> response = null;
         try {
+            log.info("GATEWAY POST addPoint: " + request.uri());
             response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -132,15 +142,17 @@ public class GatewayController {
     }
 
     @PostMapping("/game/{userId}/start")
+    @Operation(description = "Start the game for the specified user.")
     public Game startGame(@PathVariable String userId, HttpServletRequest servletRequest) {
         String token = servletRequest.getHeader("Authorization");
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(TENIS_SERVICE + "game/" + userId + "/start"))
+            .uri(URI.create(TENNIS_SERVICE + "game/" + userId + "/start"))
             .POST(HttpRequest.BodyPublishers.noBody())
             .header("Authorization", token).build();
 
         HttpResponse<String> response = null;
         try {
+            log.info("GATEWAY POST start game: " + request.uri());
             response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -157,9 +169,10 @@ public class GatewayController {
     }
 
     @GetMapping("/game/{userId}/")
+    @Operation(description = "Retrieve all games for the user with a specific 'userId'.")
     public List<GameResult> getByUser(@PathVariable String userId, HttpServletRequest servletRequest) {
         String token = servletRequest.getHeader("Authorization");
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(TENIS_SERVICE + "game/" + userId + "/"))
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(TENNIS_SERVICE + "game/" + userId + "/"))
             .GET()
             .header("Authorization", token)
             .header("Content-type", "application/json")
@@ -168,6 +181,7 @@ public class GatewayController {
 
         HttpResponse<String> response = null;
         try {
+            log.info("GATEWAY GET game: " + request.uri());
             response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -184,6 +198,7 @@ public class GatewayController {
     }
 
     @GetMapping(value = "/report/{userId}/game/{gameId}/")
+    @Operation(description = "Returns the google sheet link with the report of the specified game.")
     public Map<String, String> getReport(@PathVariable String userId, @PathVariable String gameId, HttpServletRequest servletRequest) {
         String token = servletRequest.getHeader("Authorization");
 
@@ -195,6 +210,7 @@ public class GatewayController {
 
         HttpResponse<String> response = null;
         try {
+            log.info("GATEWAY GET get report: " + request.uri());
             response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();

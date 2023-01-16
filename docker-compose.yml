@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  gateway:
+    container_name: gateway
+    build: .
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - spring-network
+  auth:
+    build: ../auth-service
+    container_name: auth
+    ports:
+      - "8081:8081"
+    networks:
+      - spring-network
+    restart: always
+  reporting:
+    build: ../reporting-service
+    container_name: reporting
+    ports:
+      - "3000:3000"
+    networks:
+      - spring-network
+  tenis:
+    container_name: tennis
+    build: ../tenis-service
+    ports:
+      - "4000:4000"
+    networks:
+      - spring-network
+    restart: always
+networks:
+  spring-network:
+    driver: bridge
