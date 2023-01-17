@@ -179,4 +179,10 @@ public class GatewayController {
     public Map<String, String> getReport(@PathVariable String userId, @PathVariable String gameId, HttpServletRequest servletRequest) {
         return new Command().getReport(servletRequest, REPORTING_SERVICE + "report/" + userId + "/game/" + gameId + "/");
     }
+
+    @GetMapping(value = "/url")
+    @Operation(description = "Returns the google sheet link with the report of the specified game.")
+    public Map<String, String> getUrl(HttpServletRequest servletRequest) {
+        return new Command().getUrl(servletRequest, REPORTING_SERVICE + "url");
+    }
 }

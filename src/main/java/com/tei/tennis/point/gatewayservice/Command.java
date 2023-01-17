@@ -38,6 +38,21 @@ public class Command {
         return null;
     }
 
+    Map<String, String> getUrl(HttpServletRequest servletRequest, String url) {
+        HttpRequest request = prepareGetRequest(servletRequest, url);
+        HttpResponse<String> response = null;
+        try {
+            log.info("GATEWAY GET get ulr: " + request.uri());
+            response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (response != null) {
+            return Map.of("link", response.body());
+        }
+        return null;
+    }
+
     List<GameResult> getByUser(HttpServletRequest servletRequest, String url) {
         HttpRequest request = prepareGetRequest(servletRequest, url);
         HttpResponse<String> response = null;
