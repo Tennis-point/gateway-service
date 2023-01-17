@@ -171,53 +171,12 @@ public class GatewayController {
     @GetMapping("/game/{userId}/")
     @Operation(description = "Retrieve all games for the user with a specific 'userId'.")
     public List<GameResult> getByUser(@PathVariable String userId, HttpServletRequest servletRequest) {
-        String token = servletRequest.getHeader("Authorization");
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(TENNIS_SERVICE + "game/" + userId + "/"))
-            .GET()
-            .header("Authorization", token)
-            .header("Content-type", "application/json")
-            .header("Access-Control-Allow-Origin", "http://localhost:8080")
-            .build();
-
-        HttpResponse<String> response = null;
-        try {
-            log.info("GATEWAY GET game: " + request.uri());
-            response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        if (response != null) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            try {
-                return Arrays.stream(objectMapper.readValue(response.body(), Game[].class)).map(ToResult::execute).toList();
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return null;
+        return new Command().getByUser(servletRequest, (TENNIS_SERVICE + "game/" + userId + "/"));
     }
 
     @GetMapping(value = "/report/{userId}/game/{gameId}/")
     @Operation(description = "Returns the google sheet link with the report of the specified game.")
     public Map<String, String> getReport(@PathVariable String userId, @PathVariable String gameId, HttpServletRequest servletRequest) {
-        String token = servletRequest.getHeader("Authorization");
-
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(REPORTING_SERVICE + "report/" + userId + "/game/"+gameId+"/"))
-            .GET()
-            .header("Authorization", token)
-            .header("Content-type", "application/json")
-            .build();
-
-        HttpResponse<String> response = null;
-        try {
-            log.info("GATEWAY GET get report: " + request.uri());
-            response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        if (response != null) {
-            return Map.of("link", response.body());
-        }
-        return null;
+        return new Command().getReport(servletRequest, REPORTING_SERVICE + "report/" + userId + "/game/" + gameId + "/");
     }
 }
